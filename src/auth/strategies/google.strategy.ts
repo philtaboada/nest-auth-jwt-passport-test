@@ -5,11 +5,9 @@ import { Strategy, VerifyCallback } from "passport-google-oauth20";
 import { Model } from "mongoose";
 import { User } from "../schemas/user.schema";
 
-
-
 @Injectable()
-export class GoogleStrategy extends PassportStrategy(Strategy, 'google'){
-    
+export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
+
     constructor(
         @InjectModel(User.name)
         private userModel: Model<User>,
@@ -22,18 +20,34 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google'){
         });
     }
 
-
-    async validate(accessToken: string, refreshToken: string, profile: any, done: VerifyCallback) {
-        const { name, emails, photos } = profile;
+    async validate(
+        accessToken: string,
+        refreshToken: string,
+        profile: any,
+        done: VerifyCallback) {
+        const { id, name, emails, photos } = profile;
         const email = emails[0].value;
+
+        console.log(accessToken);
+        console.log(refreshToken);
+        console.log(profile);
+        
 
         let user = await this.userModel.findOne({ email });
 
         if (!user) {
+            //Remenber to change the name of the fields according to the provider
+
+            // name.givenName == first name
+            // name.familyName == last name
             user = await this.userModel.create({
-                name,
+                name: `${name.givenName} ${name.familyName}`,
                 email,
-                photo: photos[0].value
+                accessToken,
+                refreshToken,
+                photo: photos[0].value,
+                provider: 'google',
+                providerId: id
             });
         }
 
